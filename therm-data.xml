@@ -1,0 +1,204 @@
+<?xml version="1.0"?>
+<ctml>
+  <validate reactions="yes" species="yes"/>
+
+  <!-- phase gas     -->
+  <phase dim="3" id="gas">
+    <elementArray datasrc="elements.xml">C H O N Ar</elementArray>
+    <speciesArray datasrc="#species_data">
+      ic5h11oh  ic4h9oh   nc4h9oh   sc4h9oh   tc4h9oh   
+      mch       c3h6      o2        n2        ar</speciesArray>
+    <state>
+      <temperature units="K">300.0</temperature>
+      <pressure units="Pa">101325.0</pressure>
+    </state>
+    <thermo model="IdealGas"/>
+    <kinetics model="GasKinetics"/>
+    <transport model="None"/>
+  </phase>
+
+  <!-- species definitions     -->
+  <speciesData id="species_data">
+
+    <!-- species ic5h11oh    -->
+    <species name="ic5h11oh">
+      <atomArray>H:12 C:5 O:1 </atomArray>
+      <note>8/24/12therm</note>
+      <thermo>
+        <NASA Tmax="1394.0" Tmin="300.0" P0="100000.0">
+           <floatArray name="coeffs" size="7">
+             -9.977316500E-01,   6.892169070E-02,  -4.606060990E-05,   1.619061690E-08, 
+             -2.368030540E-12,  -3.924436880E+04,   3.368270330E+01</floatArray>
+        </NASA>
+        <NASA Tmax="5000.0" Tmin="1394.0" P0="100000.0">
+           <floatArray name="coeffs" size="7">
+             1.766599260E+01,   2.640015780E-02,  -8.970916770E-06,   1.386579800E-09, 
+             -8.019473160E-14,  -4.587030800E+04,  -6.699580170E+01</floatArray>
+        </NASA>
+      </thermo>
+    </species>
+
+    <!-- species ic4h9oh    -->
+    <species name="ic4h9oh">
+      <atomArray>H:10 C:4 O:1 </atomArray>
+      <note>5/15/10therm</note>
+      <thermo>
+        <NASA Tmax="1394.0" Tmin="300.0" P0="100000.0">
+           <floatArray name="coeffs" size="7">
+             -8.374653620E-01,   5.765206390E-02,  -3.902154620E-05,   1.401312310E-08, 
+             -2.111591110E-12,  -3.612656280E+04,   3.117015250E+01</floatArray>
+        </NASA>
+        <NASA Tmax="5000.0" Tmin="1394.0" P0="100000.0">
+           <floatArray name="coeffs" size="7">
+             1.474231310E+01,   2.198437670E-02,  -7.515841920E-06,   1.166333930E-09, 
+             -6.764216380E-14,  -4.166166000E+04,  -5.284662110E+01</floatArray>
+        </NASA>
+      </thermo>
+    </species>
+
+    <!-- species nc4h9oh    -->
+    <species name="nc4h9oh">
+      <atomArray>H:10 C:4 O:1 </atomArray>
+      <note>2/12/9therm</note>
+      <thermo>
+        <NASA Tmax="1404.0" Tmin="300.0" P0="100000.0">
+           <floatArray name="coeffs" size="7">
+             -6.332282740E-01,   5.612011890E-02,  -3.583486850E-05,   1.143864910E-08, 
+             -1.428753750E-12,  -3.506575430E+04,   3.175215880E+01</floatArray>
+        </NASA>
+        <NASA Tmax="5000.0" Tmin="1404.0" P0="100000.0">
+           <floatArray name="coeffs" size="7">
+             1.492628030E+01,   2.151405030E-02,  -7.286198000E-06,   1.123630990E-09, 
+             -6.488331800E-14,  -4.060814050E+04,  -5.236872250E+01</floatArray>
+        </NASA>
+      </thermo>
+    </species>
+
+    <!-- species sc4h9oh    -->
+    <species name="sc4h9oh">
+      <atomArray>H:10 C:4 O:1 </atomArray>
+      <note>5/15/10therm</note>
+      <thermo>
+        <NASA Tmax="1399.0" Tmin="300.0" P0="100000.0">
+           <floatArray name="coeffs" size="7">
+             -3.149710730E-01,   5.548051970E-02,  -3.426663460E-05,   9.726206550E-09, 
+             -9.045599480E-13,  -3.724157440E+04,   2.927877580E+01</floatArray>
+        </NASA>
+        <NASA Tmax="5000.0" Tmin="1399.0" P0="100000.0">
+           <floatArray name="coeffs" size="7">
+             1.612866660E+01,   1.963125750E-02,  -6.468537930E-06,   9.801788330E-10, 
+             -5.594177240E-14,  -4.306951210E+04,  -5.971115700E+01</floatArray>
+        </NASA>
+      </thermo>
+    </species>
+
+    <!-- species tc4h9oh    -->
+    <species name="tc4h9oh">
+      <atomArray>H:10 C:4 O:1 </atomArray>
+      <note>5/15/10therm</note>
+      <thermo>
+        <NASA Tmax="1398.0" Tmin="300.0" P0="100000.0">
+           <floatArray name="coeffs" size="7">
+             -6.168104790E-01,   5.932464690E-02,  -4.286407090E-05,   1.658882140E-08, 
+             -2.674942500E-12,  -3.976046670E+04,   2.688601160E+01</floatArray>
+        </NASA>
+        <NASA Tmax="5000.0" Tmin="1398.0" P0="100000.0">
+           <floatArray name="coeffs" size="7">
+             1.516494170E+01,   2.131500960E-02,  -7.217508240E-06,   1.112838310E-09, 
+             -6.424989390E-14,  -4.515525160E+04,  -5.751267550E+01</floatArray>
+        </NASA>
+      </thermo>
+    </species>
+
+    <!-- species mch    -->
+    <species name="mch">
+      <atomArray>H:14 C:7 </atomArray>
+      <note>4/22/4therm</note>
+      <thermo>
+        <NASA Tmax="1391.0" Tmin="300.0" P0="100000.0">
+           <floatArray name="coeffs" size="7">
+             -8.094264780E+00,   1.007361500E-01,  -7.008597960E-05,   2.486879340E-08, 
+             -3.591666810E-12,  -1.998756430E+04,   6.007292240E+01</floatArray>
+        </NASA>
+        <NASA Tmax="5000.0" Tmin="1391.0" P0="100000.0">
+           <floatArray name="coeffs" size="7">
+             2.147853430E+01,   3.322159170E-02,  -1.148619340E-05,   1.796389330E-09, 
+             -1.047618640E-13,  -3.041646470E+04,  -9.931185880E+01</floatArray>
+        </NASA>
+      </thermo>
+    </species>
+
+    <!-- species c3h6    -->
+    <species name="c3h6">
+      <atomArray>H:6 C:3 </atomArray>
+      <note>G2/00</note>
+      <thermo>
+        <NASA Tmax="1000.0" Tmin="200.0" P0="100000.0">
+           <floatArray name="coeffs" size="7">
+             3.834644680E+00,   3.290789520E-03,   5.052280010E-05,  -6.662511760E-08, 
+             2.637074730E-11,   7.887171230E+02,   7.534080130E+00</floatArray>
+        </NASA>
+        <NASA Tmax="6000.0" Tmin="1000.0" P0="100000.0">
+           <floatArray name="coeffs" size="7">
+             6.038702340E+00,   1.629639310E-02,  -5.821308000E-06,   9.359368290E-10, 
+             -5.586031430E-14,  -7.417150570E+02,  -8.438259920E+00</floatArray>
+        </NASA>
+      </thermo>
+    </species>
+
+    <!-- species o2    -->
+    <species name="o2">
+      <atomArray>O:2 </atomArray>
+      <note>rus89</note>
+      <thermo>
+        <NASA Tmax="1000.0" Tmin="200.0" P0="100000.0">
+           <floatArray name="coeffs" size="7">
+             3.782456360E+00,  -2.996734160E-03,   9.847302010E-06,  -9.681295090E-09, 
+             3.243728370E-12,  -1.063943560E+03,   3.657675730E+00</floatArray>
+        </NASA>
+        <NASA Tmax="6000.0" Tmin="1000.0" P0="100000.0">
+           <floatArray name="coeffs" size="7">
+             3.660960650E+00,   6.563658110E-04,  -1.411496270E-07,   2.057979350E-11, 
+             -1.299134360E-15,  -1.215977180E+03,   3.415362790E+00</floatArray>
+        </NASA>
+      </thermo>
+    </species>
+
+    <!-- species n2    -->
+    <species name="n2">
+      <atomArray>N:2 </atomArray>
+      <note>g8/02</note>
+      <thermo>
+        <NASA Tmax="1000.0" Tmin="200.0" P0="100000.0">
+           <floatArray name="coeffs" size="7">
+             3.531005280E+00,  -1.236609880E-04,  -5.029994330E-07,   2.435306120E-09, 
+             -1.408812350E-12,  -1.046976280E+03,   2.967470380E+00</floatArray>
+        </NASA>
+        <NASA Tmax="6000.0" Tmin="1000.0" P0="100000.0">
+           <floatArray name="coeffs" size="7">
+             2.952576370E+00,   1.396900400E-03,  -4.926316030E-07,   7.860101950E-11, 
+             -4.607552040E-15,  -9.239486880E+02,   5.871887620E+00</floatArray>
+        </NASA>
+      </thermo>
+    </species>
+
+    <!-- species ar    -->
+    <species name="ar">
+      <atomArray>Ar:1 </atomArray>
+      <note>g5/97</note>
+      <thermo>
+        <NASA Tmax="1000.0" Tmin="200.0" P0="100000.0">
+           <floatArray name="coeffs" size="7">
+             2.500000000E+00,   0.000000000E+00,   0.000000000E+00,   0.000000000E+00, 
+             0.000000000E+00,  -7.453750000E+02,   4.379674910E+00</floatArray>
+        </NASA>
+        <NASA Tmax="6000.0" Tmin="1000.0" P0="100000.0">
+           <floatArray name="coeffs" size="7">
+             2.500000000E+00,   0.000000000E+00,   0.000000000E+00,   0.000000000E+00, 
+             0.000000000E+00,  -7.453750000E+02,   4.379674910E+00</floatArray>
+        </NASA>
+      </thermo>
+    </species>
+  </speciesData>
+  <reactionData id="reaction_data"/>
+</ctml>
