@@ -1,25 +1,37 @@
-% arara: lualatex
+% arara: pdflatex
 \documentclass[tikz]{standalone}
 \usepackage{pgfplots}
 \pgfplotsset{
     compat = 1.10,
 }
+
 \begin{document}
-\pgfmathdeclarefunction{gauss}{2}{%
-  \pgfmathparse{1/(#2*sqrt(2*pi))*exp(-((x-#1)^2)/(2*#2^2))}%
-}
-\begin{tikzpicture}
-\begin{axis}[
-    xtick={870,875,...,900},
-]
+
 \pgfplotstableread{histogram.dat}\hist
 \pgfplotstablegetelem{0}{0}\of\hist
 \pgfmathsetmacro\mean{\pgfplotsretval}
 \pgfplotstablegetelem{0}{1}\of\hist
 \pgfmathsetmacro\stddev{\pgfplotsretval}
+\pgfplotstablegetelem{1}{0}\of\hist
+\pgfmathsetmacro\xmin{floor(\pgfplotsretval)-1}
+\pgfmathsetmacro\xlo{\pgfplotsretval}
+\pgfplotstablegetrowsof{\hist}
+\pgfmathsetmacro\lastrow{int(\pgfplotsretval-1)}
+\pgfplotstablegetelem{\lastrow}{0}\of\hist
+\pgfmathsetmacro\xhi{\pgfplotsretval}
+\pgfmathsetmacro\xmax{ceil(\pgfplotsretval)+1}
 
+\pgfmathdeclarefunction{gauss}{2}{%
+  \pgfmathparse{1/(#2*sqrt(2*pi))*exp(-((x-#1)^2)/(2*#2^2))}%
+}
+
+\begin{tikzpicture}
+\begin{axis}[
+    xmax=\xmax, xmin=\xmin,
+    xtick={870,875,...,900},
+]
 \addplot[blue, mark=none, fill=blue!30!white, ybar interval,] table[x index=0, y index=1, skip first n=1] {histogram.dat};
-\addplot+[no markers,samples=100] expression[domain=870:900] {gauss(\mean,\stddev)};
+\addplot+[no markers,samples=100] expression[domain=\xlo:\xhi] {gauss(\mean, \stddev)};
 \end{axis}
 \end{tikzpicture}
 \end{document}
