@@ -6,6 +6,8 @@ import cantera as ct
 import numpy as np
 from multiprocessing import Pool
 import time
+import subprocess
+import os
 
 def run_case(n):
     temperatures = np.arange(300,1105,5)
@@ -85,12 +87,25 @@ def run_case(n):
 
 if __name__ == "__main__":
     start = time.time()
-    n = 1000
+    # n is the number iterations to run
+    n = 1000000
+
+    # Set up a pool of processors to run in parallel
     pool = Pool(processes=20)
+
+    # Run the analysis and get the result into a NumPy array.
     result = np.array(pool.map(run_case, range(n)))
-    print( result.mean(), np.sqrt(result.var()))
-    print(time.time()-start)
+
+    # Print the mean and twice the standard deviation to a file.
+    with open('results.txt', 'a') as output:
+        print(n, result.mean(), result.std()*2, file=output)
+    print(time.time() - start)
+
+    # Create and save the histogram data file. Compile the TeX file to make a
+    # PDF figure of the histogram.
     hist, bin_edges = np.histogram(result, bins=100, density=True)
-    np.savetxt('histogram/histogram.dat',np.vstack((np.insert(bin_edges,0,result.mean()), np.insert(np.append(hist,0),0,result.std()))).T)
+    np.savetxt('histogram/histogram.dat', np.vstack((np.insert(bin_edges, 0, result.mean()), np.insert(np.append(hist,0), 0, result.std()))).T)
+    os.chdir('histogram')
+    subprocess.call(['pdflatex', '-interaction=batchmode', 'histogram'])
     # print(result)
     # n, bins, patches = plt.hist(result, 100, normed=1, facecolor='green', alpha=0.75)
