@@ -1,4 +1,5 @@
 #! /usr/bin/env python3
+from __future__ import division, print_function
 from scipy.special import lambertw
 from scipy.stats import norm as norm_dist
 import cantera as ct
