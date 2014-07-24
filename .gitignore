@@ -2,3 +2,5 @@
 *.log
 *.aux
 histogram/*.dat
+results.txt
+
