@@ -1,6 +1,7 @@
 % arara: pdflatex
 \documentclass[tikz]{standalone}
 \usepackage{pgfplots}
+\usepackage{siunitx}
 \pgfplotsset{
     compat = 1.10,
 }
@@ -29,6 +30,7 @@
 \begin{axis}[
     xmax=\xmax, xmin=\xmin,
     xtick={870,875,...,900},
+    xlabel={Temperature, \si{\kelvin}},
 ]
 \addplot[blue, mark=none, fill=blue!30!white, ybar interval,] table[x index=0, y index=1, skip first n=1] {histogram.dat};
 \addplot+[no markers,samples=100] expression[domain=\xlo:\xhi] {gauss(\mean, \stddev)};
