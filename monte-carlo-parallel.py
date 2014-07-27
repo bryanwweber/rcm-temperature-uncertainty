@@ -8,12 +8,12 @@ from multiprocessing import Pool
 import time
 import subprocess
 import os
+from itertools import repeat as rp
 
-def run_case(n):
+def run_case(n, fuel, P0, T0, PC, mfuel, Ta, mix):
     # Set the string of the fuel. Possible values with the distributed
     # therm-data.xml are 'mch', 'nc4h9oh', 'sc4h9oh', 'tc4h9oh', 'ic4h9oh',
     # 'ic5h11oh', and 'c3h6'
-    fuel = 'mch'
 
     # Set the Cantera Solution with the thermo data from the xml file.
     # Get the molecular weight of the fuel and set the unit basis for the
@@ -23,7 +23,7 @@ def run_case(n):
     gas.basis = 'molar'
 
     # Set the ambient temperature and tank volume
-    Ta = 21.7+273.15
+    # Ta = 21.7+273.15
     # Convert the ambient temperature to °C to match the spec.
     sigma_Ta = max(2.2,(Ta-273.15)*0.0075)/2
     Ta_dist = norm_dist(loc=Ta, scale=sigma_Ta)
@@ -34,26 +34,26 @@ def run_case(n):
     # Set the initial temperature (in K), initial pressure (in Pa), and
     # compressed pressure (in Pa). Create the normal distributions for each
     # of these parameters.
-    T0 = 295.1
+    # T0 = 295.1
     # Convert the initial temperature to °C to match the spec.
     sigma_T0 = max(2.2,(T0-273)*0.0075)/2
     T0_dist = norm_dist(loc=T0, scale=sigma_T0)
 
-    P0 = 213755.753
+    # P0 = 122656.579
     sigma_P0 = 346.6/2
     P0_dist = norm_dist(loc=P0, scale=sigma_P0)
 
-    PC = 50.0054*1E5
+    # PC = 15.1E5
     sigma_PC = 5000/2
     PC_dist = norm_dist(loc=PC, scale=sigma_PC)
 
     # Set the nominal injected mass of the fuel. Compute the nominal moles of
     # fuel and corresponding nominal required number of moles of the gases.
-    nom_mass_fuel = 3.48
+    nom_mass_fuel = mfuel
     nom_mole_fuel = nom_mass_fuel/fuel_mw
-    nom_mole_o2 = nom_mole_fuel*10.5
-    nom_mole_n2 = nom_mole_fuel*12.25
-    nom_mole_ar = nom_mole_fuel*71.75
+    nom_mole_o2 = nom_mole_fuel*mix[0]
+    nom_mole_n2 = nom_mole_fuel*mix[1]
+    nom_mole_ar = nom_mole_fuel*mix[2]
 
     # Create the normal distribution for the fuel mass
     sigma_mass = 0.04/2
@@ -128,24 +128,47 @@ def run_case(n):
 if __name__ == "__main__":
     start = time.time()
     # n is the number iterations to run
-    n = 1000000
+    n = 3
+    P0s = [1.8794E5, 4.3787E5, 3.4801E5, 4.3635E5, 1.9118E5, 4.3987E5,]
+    T0s = [308]*6
+    PCs = [50.0135E5, 49.8629E5, 49.6995E5, 50.0716E5, 49.8254E5, 50.0202E5,]
+    mfuels = [3.48, 3.48, 3.53, 3.53, 3.53, 3.69,]
+    Tas = [21.7, 21.7, 22.1, 35.0, 21.7, 20.0,]
+    cases = ['a', 'b', 'c', 'd', 'e', 'f',]
+    fuel = 'mch'
+    mix1 = [10.5, 12.25, 71.75,]
+    mix2 = [21.0, 00.00, 73.50,]
+    mix3 = [07.0, 16.35, 71.15,]
+    for i, case in enumerate(cases):
+        if case == 'a' or case == 'b':
+            mix = mix1
+        elif case == 'c' or case == 'd':
+            mix = mix2
+        else:
+            mix = mix3
 
-    # Set up a pool of processors to run in parallel
-    pool = Pool(processes=20)
+        P0 = P0s[i]
+        T0 = T0s[i]
+        PC = PCs[i]
+        mfuel = mfuels[i]
+        Ta = Tas[i]
+        send = zip(range(n), rp(fuel), rp(P0), rp(T0), rp(PC), rp(mfuel), rp(Ta), rp(mix))
+        # Set up a pool of processors to run in parallel
+        with Pool(processes=n) as pool:
 
-    # Run the analysis and get the result into a NumPy array.
-    result = np.array(pool.map(run_case, range(n)))
+        # Run the analysis and get the result into a NumPy array.
+            result = np.array(pool.starmap(run_case, send))
 
-    # Print the mean and twice the standard deviation to a file.
-    with open('results.txt', 'a') as output:
-        print(n, result.mean(), result.std()*2, file=output)
-    print(time.time() - start)
+        # Print the mean and twice the standard deviation to a file.
+        with open('results.txt', 'a') as output:
+            print(case, result.mean(), result.std()*2, file=output)
+        print(time.time() - start)
 
-    # Create and save the histogram data file. Compile the TeX file to make a
-    # PDF figure of the histogram.
-    hist, bin_edges = np.histogram(result, bins=100, density=True)
-    np.savetxt('histogram/histogram.dat', np.vstack((np.insert(bin_edges, 0, result.mean()), np.insert(np.append(hist,0), 0, result.std()))).T)
-    os.chdir('histogram')
-    subprocess.call(['pdflatex', '-interaction=batchmode', 'histogram'])
+        # Create and save the histogram data file. Compile the TeX file to make a
+        # PDF figure of the histogram.
+        hist, bin_edges = np.histogram(result, bins=100, density=True)
+        np.savetxt('histogram/histogram-'+case+'.dat', np.vstack((np.insert(bin_edges, 0, result.mean()), np.insert(np.append(hist,0), 0, result.std()))).T)
+    # os.chdir('histogram')
+    # subprocess.call(['pdflatex', '-interaction=batchmode', 'histogram'])
     # print(result)
     # n, bins, patches = plt.hist(result, 100, normed=1, facecolor='green', alpha=0.75)
