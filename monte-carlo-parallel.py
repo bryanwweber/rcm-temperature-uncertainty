@@ -11,10 +11,6 @@ import os
 from itertools import repeat as rp
 
 def run_case(n, fuel, P0, T0, PC, mfuel, Ta, mix):
-    # Set the string of the fuel. Possible values with the distributed
-    # therm-data.xml are 'mch', 'nc4h9oh', 'sc4h9oh', 'tc4h9oh', 'ic4h9oh',
-    # 'ic5h11oh', and 'c3h6'
-
     # Set the Cantera Solution with the thermo data from the xml file.
     # Get the molecular weight of the fuel and set the unit basis for the
     # Solution to molar basis.
@@ -127,15 +123,23 @@ def run_case(n, fuel, P0, T0, PC, mfuel, Ta, mix):
 
 if __name__ == "__main__":
     start = time.time()
-    # n is the number iterations to run
-    n = 3
+    # n is the number iterations to run per case
+    n = 1000000
+
+    # Set the parameters to be studied so that we can use a loop
     P0s = [1.8794E5, 4.3787E5, 3.4801E5, 4.3635E5, 1.9118E5, 4.3987E5,]
     T0s = [308]*6
     PCs = [50.0135E5, 49.8629E5, 49.6995E5, 50.0716E5, 49.8254E5, 50.0202E5,]
     mfuels = [3.48, 3.48, 3.53, 3.53, 3.53, 3.69,]
     Tas = [21.7, 21.7, 22.1, 35.0, 21.7, 20.0,]
     cases = ['a', 'b', 'c', 'd', 'e', 'f',]
+
+    # Set the string of the fuel. Possible values with the distributed
+    # therm-data.xml are 'mch', 'nc4h9oh', 'sc4h9oh', 'tc4h9oh', 'ic4h9oh',
+    # 'ic5h11oh', and 'c3h6'
     fuel = 'mch'
+
+    # Set the mixtures to study
     mix1 = [10.5, 12.25, 71.75,]
     mix2 = [21.0, 00.00, 73.50,]
     mix3 = [07.0, 16.35, 71.15,]
@@ -154,7 +158,7 @@ if __name__ == "__main__":
         Ta = Tas[i]
         send = zip(range(n), rp(fuel), rp(P0), rp(T0), rp(PC), rp(mfuel), rp(Ta), rp(mix))
         # Set up a pool of processors to run in parallel
-        with Pool(processes=n) as pool:
+        with Pool(processes=20) as pool:
 
         # Run the analysis and get the result into a NumPy array.
             result = np.array(pool.starmap(run_case, send))
