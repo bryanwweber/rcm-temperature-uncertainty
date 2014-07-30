@@ -10,22 +10,13 @@ import subprocess
 import os
 from itertools import repeat as rp
 
-def run_case(n, fuel, P0, T0, PC, mfuel, Ta, mix):
+def run_case(n, fuel, P0, T0, PC, mix):
     # Set the Cantera Solution with the thermo data from the xml file.
     # Get the molecular weight of the fuel and set the unit basis for the
     # Solution to molar basis.
     gas = ct.Solution('therm-data.xml')
     fuel_mw = gas.molecular_weights[gas.species_index(fuel)]
     gas.basis = 'molar'
-
-    # Set the ambient temperature and tank volume
-    # Ta = 21.7+273.15
-    # Convert the ambient temperature to °C to match the spec.
-    sigma_Ta = max(2.2,(Ta-273.15)*0.0075)/2
-    Ta_dist = norm_dist(loc=Ta, scale=sigma_Ta)
-    nom_tank_volume = 0.01660
-    sigma_volume = 0.00001
-    vol_dist = norm_dist(loc=nom_tank_volume, scale=sigma_volume)
 
     # Set the initial temperature (in K), initial pressure (in Pa), and
     # compressed pressure (in Pa). Create the normal distributions for each
@@ -43,58 +34,57 @@ def run_case(n, fuel, P0, T0, PC, mfuel, Ta, mix):
     sigma_PC = 5000/2
     PC_dist = norm_dist(loc=PC, scale=sigma_PC)
 
-    # Set the nominal injected mass of the fuel. Compute the nominal moles of
-    # fuel and corresponding nominal required number of moles of the gases.
-    nom_mass_fuel = mfuel
-    nom_mole_fuel = nom_mass_fuel/fuel_mw
-    nom_mole_o2 = nom_mole_fuel*mix[0]
-    nom_mole_n2 = nom_mole_fuel*mix[1]
-    nom_mole_ar = nom_mole_fuel*mix[2]
-
-    # Create the normal distribution for the fuel mass
-    sigma_mass = 0.04/2
-    fuel_mass_dist = norm_dist(loc=nom_mass_fuel, scale=sigma_mass)
-
-    # Calculate the nominal pressure required for each gas to match the desired
-    # molar proportions. Note that the gas constant from Cantera is given in
-    # units of J/kmol-K, hence the factor of 1000.
-    nom_o2_pres = nom_mole_o2*ct.gas_constant*Ta/(1000*nom_tank_volume)
-    nom_n2_pres = nom_mole_n2*ct.gas_constant*Ta/(1000*nom_tank_volume)
-    nom_ar_pres = nom_mole_ar*ct.gas_constant*Ta/(1000*nom_tank_volume)
-
-    # Compute the pressures of each component as they are filled into the
-    # mixing tank. The mean of the distribution of the pressure of each
-    # subsequent gas is the sum of the sampled value of the pressure of the
-    # previous gas plus the nominal value of the current gas.
     sigma_pressure = 346.6/2
-    o2_dist = norm_dist(loc=nom_o2_pres, scale=sigma_pressure)
-    o2_pres_rand = o2_dist.ppf(np.random.random_sample())
-    n2_pressure = o2_pres_rand + nom_n2_pres
-    n2_dist = norm_dist(loc=n2_pressure, scale=sigma_pressure)
-    n2_pres_rand = n2_dist.ppf(np.random.random_sample())
-    ar_pressure = n2_pres_rand + nom_ar_pres
-    ar_dist = norm_dist(loc=ar_pressure, scale=sigma_pressure)
-    ar_pres_rand = ar_dist.ppf(np.random.random_sample())
-
-    # Sample random values of the ambient temperature, tank volume, and fuel
-    # mass from their distributions.
-    Ta_rand = Ta_dist.ppf(np.random.random_sample())
-    tank_volume_rand = vol_dist.ppf(np.random.random_sample())
-    mole_fuel_rand = fuel_mass_dist.ppf(np.random.random_sample())/fuel_mw
-
-    # Compute the number of moles of each gaseous component based on the
-    # sampling from the various distributions. Note that the gas constant from
-    # Cantera is given in units of J/kmol-K, hence the factor of 1000.
-    mole_o2_rand = o2_pres_rand*tank_volume_rand*1000/(ct.gas_constant*Ta_rand)
-    mole_n2_rand = n2_pres_rand*tank_volume_rand*1000/(ct.gas_constant*Ta_rand)
-    mole_ar_rand = ar_pres_rand*tank_volume_rand*1000/(ct.gas_constant*Ta_rand)
+    # For the experiments studied here, if there was no argon added,
+    # the nitrogen was added first. Otherwise, the order was o2, n2,
+    # ar, fuel. Compute the pressures of each component as they are
+    # filled into the mixing tank.
+    if mix['ar'] > 0:
+        nom_o2_pres = mix['o2']*ct.one_atm/760
+        nom_n2_pres = (mix['n2'] - mix['o2'])*ct.one_atm/760
+        nom_ar_pres = (mix['ar'] - mix['n2'])*ct.one_atm/760
+        nom_fuel_pres = (mix['fuel'] - mix['ar'])*ct.one_atm/760
+        o2_dist = norm_dist(loc=nom_o2_pres, scale=sigma_pressure)
+        o2_pres_rand = o2_dist.ppf(np.random.random_sample())
+        n2_pressure = o2_pres_rand + nom_n2_pres
+        n2_dist = norm_dist(loc=n2_pressure, scale=sigma_pressure)
+        n2_pres_rand = n2_dist.ppf(np.random.random_sample())
+        ar_pressure = n2_pres_rand + nom_ar_pres
+        ar_dist = norm_dist(loc=ar_pressure, scale=sigma_pressure)
+        ar_pres_rand = ar_dist.ppf(np.random.random_sample())
+        fuel_pressure = ar_pres_rand + nom_fuel_pres
+        fuel_dist = norm_dist(loc=fuel_pressure, scale=sigma_pressure)
+        fuel_pres_rand = fuel_dist.ppf(np.random.random_sample())
+        o2_par_pres = o2_pres_rand
+        n2_par_pres = n2_pres_rand - o2_pres_rand
+        ar_par_pres = ar_pres_rand - n2_pres_rand
+        fuel_par_pres = fuel_pres_rand - ar_pres_rand
+    else:
+        nom_n2_pres = mix['n2']*ct.one_atm/760
+        nom_o2_pres = (mix['o2'] - mix['n2'])*ct.one_atm/760
+        nom_fuel_pres = (mix['fuel'] - mix['o2'])*ct.one_atm/760
+        nom_ar_pres = 0
+        n2_dist = norm_dist(loc=nom_n2_pres, scale=sigma_pressure)
+        n2_pres_rand = n2_dist.ppf(np.random.random_sample())
+        o2_pressure = n2_pres_rand + nom_o2_pres
+        o2_dist = norm_dist(loc=o2_pressure, scale=sigma_pressure)
+        o2_pres_rand = o2_dist.ppf(np.random.random_sample())
+        fuel_pressure = o2_pres_rand + nom_fuel_pres
+        fuel_dist = norm_dist(loc=fuel_pressure, scale=sigma_pressure)
+        fuel_pres_rand = fuel_dist.ppf(np.random.random_sample())
+        n2_par_pres = n2_pres_rand
+        o2_par_pres = o2_pres_rand - n2_pres_rand
+        fuel_par_pres = fuel_pres_rand - o2_pres_rand
+        ar_par_pres = 0
 
     # Compute the mole fractions of each component and set the state of the
     # Cantera solution.
-    total_moles = sum([mole_fuel_rand, mole_o2_rand, mole_n2_rand, mole_ar_rand])
+    total_pres = o2_par_pres + n2_par_pres + ar_par_pres + fuel_par_pres
     mole_fractions = '{fuel_name}:{fuel_mole},o2:{o2},n2:{n2},ar:{ar}'.format(
-        fuel_name=fuel, fuel_mole=mole_fuel_rand/total_moles, o2=mole_o2_rand/total_moles,
-        n2=mole_n2_rand/total_moles, ar=mole_ar_rand/total_moles)
+        fuel_name=fuel, fuel_mole=fuel_par_pres/total_pres,
+        o2=o2_par_pres/total_pres, n2=n2_par_pres/total_pres,
+        ar=ar_par_pres/total_pres)
+    print(mole_fractions)
     gas.TPX = None, None, mole_fractions
 
     # Initialize the array of temperatures over which the C_p should be fit.
@@ -122,41 +112,46 @@ def run_case(n, fuel, P0, T0, PC, mfuel, Ta, mix):
     return TC_rand
 
 if __name__ == "__main__":
-    start = time.time()
     # n is the number iterations to run per case
     n = 1000000
 
     # Set the parameters to be studied so that we can use a loop
-    P0s = [1.8794E5, 4.3787E5, 3.4801E5, 4.3635E5, 1.9118E5, 4.3987E5,]
-    T0s = [308]*6
-    PCs = [50.0135E5, 49.8629E5, 49.6995E5, 50.0716E5, 49.8254E5, 50.0202E5,]
-    mfuels = [3.48, 3.48, 3.53, 3.53, 3.53, 3.69,]
-    Tas = [21.7, 21.7, 22.1, 35.0, 21.7, 20.0,]
-    cases = ['a', 'b', 'c', 'd', 'e', 'f',]
+    P0s = [0.3613E5, 0.5612E5, 1.2547E5, 1.8601E5, 1.6951E5, 1.7138E5, 0.3763E5, 0.5619E5,]
+    T0s = [413, 413, 413, 398, 398, 358, 413, 413,]
+    PCs = [10.0918E5, 10.1670E5, 40.6010E5, 40.5571E5, 40.7850E5, 40.5031E5, 10.1301E5, 10.0784E5,]
+    cases = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
 
     # Set the string of the fuel. Possible values with the distributed
     # therm-data.xml are 'mch', 'nc4h9oh', 'sc4h9oh', 'tc4h9oh', 'ic4h9oh',
     # 'ic5h11oh', and 'c3h6'
-    fuel = 'mch'
+    fuel = 'c3h6'
 
     # Set the mixtures to study
-    mix1 = [10.5, 12.25, 71.75,]
-    mix2 = [21.0, 00.00, 73.50,]
-    mix3 = [07.0, 16.35, 71.15,]
+    mix1 = {'o2':257, 'n2':739, 'ar':1223, 'fuel':1280,}
+    mix2 = {'o2':216, 'n2':984, 'ar':1752, 'fuel':1800,}
+    mix3 = {'ar':0, 'n2':1536, 'o2':1752, 'fuel':1800,}
+    mix4 = {'ar':0, 'n2':1365, 'o2':1557, 'fuel':1600,}
+    mix5 = {'ar':0, 'n2':1413, 'o2':1473, 'fuel':1500,}
+    mix6 = {'ar':0, 'n2':1607, 'o2':1675, 'fuel':1706,}
     for i, case in enumerate(cases):
+        start = time.time()
         if case == 'a' or case == 'b':
             mix = mix1
-        elif case == 'c' or case == 'd':
+        elif case == 'g' or case == 'h':
             mix = mix2
-        else:
+        elif case == 'f':
             mix = mix3
+        elif case == 'e':
+            mix = mix4
+        elif case == 'c':
+            mix = mix5
+        elif case == 'd':
+            mix = mix6
 
         P0 = P0s[i]
         T0 = T0s[i]
         PC = PCs[i]
-        mfuel = mfuels[i]
-        Ta = Tas[i]
-        send = zip(range(n), rp(fuel), rp(P0), rp(T0), rp(PC), rp(mfuel), rp(Ta), rp(mix))
+        send = zip(range(n), rp(fuel), rp(P0), rp(T0), rp(PC), rp(mix))
         # Set up a pool of processors to run in parallel
         with Pool(processes=20) as pool:
 
