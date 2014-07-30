@@ -65,7 +65,9 @@ def run_case(n, fuel, P0, T0, PC, mfuel, Ta, mix):
     # Compute the pressures of each component as they are filled into the
     # mixing tank. The mean of the distribution of the pressure of each
     # subsequent gas is the sum of the sampled value of the pressure of the
-    # previous gas plus the nominal value of the current gas.
+    # previous gas plus the nominal value of the current gas. Note that these
+    # are thus not partial pressures, but the total pressure in the tank after
+    # filling each component.
     sigma_pressure = 346.6/2
     o2_dist = norm_dist(loc=nom_o2_pres, scale=sigma_pressure)
     o2_pres_rand = o2_dist.ppf(np.random.random_sample())
@@ -86,8 +88,8 @@ def run_case(n, fuel, P0, T0, PC, mfuel, Ta, mix):
     # sampling from the various distributions. Note that the gas constant from
     # Cantera is given in units of J/kmol-K, hence the factor of 1000.
     mole_o2_rand = o2_pres_rand*tank_volume_rand*1000/(ct.gas_constant*Ta_rand)
-    mole_n2_rand = n2_pres_rand*tank_volume_rand*1000/(ct.gas_constant*Ta_rand)
-    mole_ar_rand = ar_pres_rand*tank_volume_rand*1000/(ct.gas_constant*Ta_rand)
+    mole_n2_rand = (n2_pres_rand - o2_pres_rand)*tank_volume_rand*1000/(ct.gas_constant*Ta_rand)
+    mole_ar_rand = (ar_pres_rand - n2_pres_rand)*tank_volume_rand*1000/(ct.gas_constant*Ta_rand)
 
     # Compute the mole fractions of each component and set the state of the
     # Cantera solution.
