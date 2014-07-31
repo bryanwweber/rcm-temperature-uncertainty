@@ -79,12 +79,11 @@ def run_case(n, fuel, P0, T0, PC, mix):
 
     # Compute the mole fractions of each component and set the state of the
     # Cantera solution.
-    total_pres = o2_par_pres + n2_par_pres + ar_par_pres + fuel_par_pres
+    total_pres = sum([o2_par_pres, n2_par_pres, ar_par_pres, fuel_par_pres])
     mole_fractions = '{fuel_name}:{fuel_mole},o2:{o2},n2:{n2},ar:{ar}'.format(
         fuel_name=fuel, fuel_mole=fuel_par_pres/total_pres,
         o2=o2_par_pres/total_pres, n2=n2_par_pres/total_pres,
         ar=ar_par_pres/total_pres)
-    print(mole_fractions)
     gas.TPX = None, None, mole_fractions
 
     # Initialize the array of temperatures over which the C_p should be fit.
