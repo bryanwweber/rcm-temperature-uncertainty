@@ -139,30 +139,26 @@ if __name__ == "__main__":
         # of each component.
         delta_X_fuel_2 = ((sum([nom_mole_o2, nom_mole_n2, nom_mole_ar])/total_moles**2)*delta_fuel_moles)**2
         fuel_sum = 0
-        for moles, delta in zip([nom_mole_o2, nom_mole_n2, nom_mole_ar],
-                                [delta_o2_2, delta_n2_2, delta_ar_2]):
-            fuel_sum += ((- moles/total_moles**2)**2)*delta
+        for delta in [delta_o2_2, delta_n2_2, delta_ar_2]:
+            fuel_sum += ((-nom_mole_fuel/total_moles**2)**2)*delta
         delta_X_fuel_2 += fuel_sum
 
         delta_X_o2_2 = ((sum([nom_mole_fuel, nom_mole_n2, nom_mole_ar])/total_moles**2)**2)*delta_o2_2
         o2_sum = 0
-        for moles, delta in zip([nom_mole_fuel, nom_mole_n2, nom_mole_ar],
-                                [delta_fuel_moles**2, delta_n2_2, delta_ar_2]):
-            o2_sum += ((-moles/total_moles**2)**2)*delta
+        for delta in [delta_fuel_moles**2, delta_n2_2, delta_ar_2]:
+            o2_sum += ((-nom_mole_o2/total_moles**2)**2)*delta
         delta_X_o2_2 += o2_sum
 
         delta_X_n2_2 = ((sum([nom_mole_fuel, nom_mole_o2, nom_mole_ar])/total_moles**2)**2)*delta_n2_2
         n2_sum = 0
-        for moles, delta in zip([nom_mole_fuel, nom_mole_o2, nom_mole_ar],
-                                [delta_fuel_moles**2, delta_o2_2, delta_ar_2]):
-            n2_sum += ((-moles/total_moles**2)**2)*delta
+        for delta in [delta_fuel_moles**2, delta_o2_2, delta_ar_2]:
+            n2_sum += ((-nom_mole_n2/total_moles**2)**2)*delta
         delta_X_n2_2 += n2_sum
 
         delta_X_ar_2 = ((sum([nom_mole_fuel, nom_mole_n2, nom_mole_o2])/total_moles**2)**2)*delta_ar_2
         ar_sum = 0
-        for moles, delta in zip([nom_mole_fuel, nom_mole_n2, nom_mole_o2],
-                                [delta_fuel_moles**2, delta_n2_2, delta_o2_2]):
-            ar_sum += ((-moles/total_moles**2)**2)*delta
+        for delta in [delta_fuel_moles**2, delta_n2_2, delta_o2_2]:
+            ar_sum += ((-nom_mole_ar/total_moles**2)**2)*delta
         delta_X_ar_2 += ar_sum
 
         delta_Cp = np.zeros(len(temperatures))
