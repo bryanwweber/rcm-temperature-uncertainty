@@ -35,8 +35,6 @@ if __name__ == "__main__":
     # Set the uncertainties of the parameters
     delta_volume = 0.00002 # m**3
     delta_fuel_mass = 0.04 # grams
-    delta_Ta = 2.2 # °C
-    delta_T0 = 2.2 # °C
     delta_Pi = 346.6 # Pa
     delta_P0 = 346.6 # Pa
     delta_PC = 5000 # Pa
@@ -60,6 +58,9 @@ if __name__ == "__main__":
         PC = PCs[j]
         nom_mass_fuel = mfuels[j]
         Ta = Tas[j] + 273.15
+
+        delta_Ta = max(2.2, (Ta - 273.15)*0.0075) # °C
+        delta_T0 = max(2.2, (T0 - 273)*0.0075) # °C
 
         gas = ct.Solution('therm-data.xml')
         fuel_mw = gas.molecular_weights[gas.species_index(fuel)]
@@ -191,4 +192,5 @@ if __name__ == "__main__":
             delta_TC_2 += (partial*delta)**2
 
         delta_TC[j] = np.sqrt(delta_TC_2)
+
     print(delta_TC)
