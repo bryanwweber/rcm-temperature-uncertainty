@@ -41,8 +41,6 @@ if __name__ == "__main__":
     delta_P0 = 346.6 # Pa
     delta_PC = 5000 # Pa
 
-    Te = 650 # Expansion temperature, Kelvin
-
     # Convert the gas constant from Cantera to J/mol-K
     R = ct.gas_constant/1000
 
@@ -108,13 +106,13 @@ if __name__ == "__main__":
         b = (gas_cp[1] - gas_cp[0])/(temperatures[1] - temperatures[0])
         a = (f[1]*gas_cp[1] - f[0]*gas_cp[0])/(f[1] - f[0])
 
-        partial_PC = Te/(PC*(a + Te*b))
-        partial_P0 = -Te/(P0*(a + Te*b))
-        partial_T0 = (Te*(a +T0*b))/(T0*(a + Te*b))
-        partial_a = ((Te*(b*(Te*np.log(T0/Te) + Te - T0) -
-                    np.log(PC/P0)))/(a + Te*b)**2)
-        partial_b = (-(Te*(a*(Te*np.log(T0/Te) + Te - T0) +
-                    Te*np.log(PC/P0)))/(a + Te*b)**2)
+        D = np.real(lambertw(b/a*np.exp((b*T0)/a)*T0*(PC/P0)**(1/a)))
+
+        partial_PC = D/(b*PC*(D+1))
+        partial_P0 = -D/(b*P0*(D+1))
+        partial_T0 = ((a + b*T0)*D)/(b*T0*(D+1))
+        partial_a = (-D*(b*T0 + np.log(PC/P0) - a*D))/(a*b*(D+1))
+        partial_b = (D*(b*T0 - a*D))/(b**2*(D+1))
 
         # Calculate the uncertainty in the number of moles of fuel.
         delta_fuel_moles = delta_fuel_mass/fuel_mw
@@ -194,4 +192,3 @@ if __name__ == "__main__":
 
         delta_TC[j] = np.sqrt(delta_TC_2)
     print(delta_TC)
-    
