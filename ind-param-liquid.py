@@ -39,6 +39,28 @@ if __name__ == "__main__":
     # Initialize the delta_TC array
     delta_TC = np.zeros(len(cases))
 
+    gas = ct.Solution('therm-data.xml')
+    fuel_mw = gas.molecular_weights[gas.species_index(fuel)]
+    gas.basis = 'molar'
+
+    temperatures = [300, 1100,]
+    gas_cp = np.zeros(len(temperatures))
+    fuel_cp = np.zeros(len(temperatures))
+    o2_cp = np.zeros(len(temperatures))
+    n2_cp = np.zeros(len(temperatures))
+    ar_cp = np.zeros(len(temperatures))
+    f = [11, 3,]
+
+    for i, temperature in enumerate(temperatures):
+        gas.TPX = temperature, None, '{fuel_name}:1'.format(fuel_name=fuel)
+        fuel_cp[i] = gas.cp/ct.gas_constant
+        gas.TPX = None, None, 'o2:1'
+        o2_cp[i] = gas.cp/ct.gas_constant
+        gas.TPX = None, None, 'n2:1'
+        n2_cp[i] = gas.cp/ct.gas_constant
+        gas.TPX = None, None, 'ar:1'
+        ar_cp[i] = gas.cp/ct.gas_constant
+
     for j, case in enumerate(cases):
         if case == 'a' or case == 'b':
             mix = mix1
@@ -56,10 +78,6 @@ if __name__ == "__main__":
         delta_Ta = max(2.2, (Ta - 273.15)*0.0075) # °C
         delta_T0 = max(2.2, (T0 - 273)*0.0075) # °C
 
-        gas = ct.Solution('therm-data.xml')
-        fuel_mw = gas.molecular_weights[gas.species_index(fuel)]
-        gas.basis = 'molar'
-
         # Compute the nominal moles of fuel and corresponding nominal required
         # number of moles of the gases.
         nom_mole_fuel = nom_mass_fuel/fuel_mw
@@ -75,27 +93,10 @@ if __name__ == "__main__":
             n2=nom_mole_n2/total_moles, ar=nom_mole_ar/total_moles)
         gas.TPX = None, None, mole_fractions
 
-        # Compute the specific heat at the end points of the curve to be fit
-        temperatures = [300, 1100,]
-        gas_cp = np.zeros(len(temperatures))
-        fuel_cp = np.zeros(len(temperatures))
-        o2_cp = np.zeros(len(temperatures))
-        n2_cp = np.zeros(len(temperatures))
-        ar_cp = np.zeros(len(temperatures))
-        f = [11, 3,]
+        # Compute the total specific heat at the end points of the curve to be fit
         for i, temperature in enumerate(temperatures):
             gas.TP = temperature, None
             gas_cp[i] = gas.cp/ct.gas_constant
-
-        for i, temperature in enumerate(temperatures):
-            gas.TPX = temperature, None, '{fuel_name}:1'.format(fuel_name=fuel)
-            fuel_cp[i] = gas.cp/ct.gas_constant
-            gas.TPX = None, None, 'o2:1'
-            o2_cp[i] = gas.cp/ct.gas_constant
-            gas.TPX = None, None, 'n2:1'
-            n2_cp[i] = gas.cp/ct.gas_constant
-            gas.TPX = None, None, 'ar:1'
-            ar_cp[i] = gas.cp/ct.gas_constant
 
         # Compute the slope and y-intercept based on the end points
         b = (gas_cp[1] - gas_cp[0])/(temperatures[1] - temperatures[0])
@@ -168,7 +169,6 @@ if __name__ == "__main__":
                                     delta_X_ar_2]):
                 delta_Cp[i] += delta*cp**2
 
-        # print(delta_X_fuel_2, delta_X_o2_2, delta_X_n2_2, delta_X_ar_2)
         partial_b_Cp = np.array([-1/(temperatures[1] - temperatures[0]), 1/(temperatures[1] - temperatures[0])])
         delta_b_2 = (partial_b_Cp[0]*delta_Cp[0])**2 + (partial_b_Cp[1]*delta_Cp[1])**2
         delta_b = np.sqrt(delta_b_2)
