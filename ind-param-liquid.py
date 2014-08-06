@@ -1,14 +1,8 @@
 #! /usr/bin/env python3
 from __future__ import division, print_function
 from scipy.special import lambertw
-from scipy.stats import norm as norm_dist
 import cantera as ct
 import numpy as np
-from multiprocessing import Pool
-import time
-import subprocess
-import os
-from itertools import repeat as rp
 
 if __name__ == "__main__":
     # Set the parameters to be studied so that we can use a loop
