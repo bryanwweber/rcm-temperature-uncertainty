@@ -21,7 +21,7 @@ def run_case(n, fuel, P0, T0, PC, mfuel, Ta, mix):
     # Set the ambient temperature and tank volume
     # Ta = 21.7+273.15
     # Convert the ambient temperature to °C to match the spec.
-    sigma_Ta = max(2.2,(Ta-273.15)*0.0075)/2
+    sigma_Ta = max(2.2, (Ta - 273.15)*0.0075)/2
     Ta_dist = norm_dist(loc=Ta, scale=sigma_Ta)
     nom_tank_volume = 0.01660
     sigma_volume = 0.00001
@@ -32,7 +32,7 @@ def run_case(n, fuel, P0, T0, PC, mfuel, Ta, mix):
     # of these parameters.
     # T0 = 295.1
     # Convert the initial temperature to °C to match the spec.
-    sigma_T0 = max(2.2,(T0-273)*0.0075)/2
+    sigma_T0 = max(2.2, (T0 - 273)*0.0075)/2
     T0_dist = norm_dist(loc=T0, scale=sigma_T0)
 
     # P0 = 122656.579
@@ -124,16 +124,15 @@ def run_case(n, fuel, P0, T0, PC, mfuel, Ta, mix):
     return TC_rand
 
 if __name__ == "__main__":
-    start = time.time()
     # n is the number iterations to run per case
     n = 1000000
 
     # Set the parameters to be studied so that we can use a loop
-    P0s = [1.8794E5, 4.3787E5, 3.4801E5, 4.3635E5, 1.9118E5, 4.3987E5,]
+    P0s = [1.8794E5, 4.3787E5, 3.9691E5, 4.3635E5, 1.9118E5, 4.3987E5,]
     T0s = [308]*6
-    PCs = [50.0135E5, 49.8629E5, 49.6995E5, 50.0716E5, 49.8254E5, 50.0202E5,]
-    mfuels = [3.48, 3.48, 3.53, 3.53, 3.53, 3.69,]
-    Tas = [21.7, 21.7, 22.1, 35.0, 21.7, 20.0,]
+    PCs = [50.0135E5, 49.8629E5, 50.0485E5, 49.6995E5, 49.8254E5, 50.0202E5,]
+    mfuels = [3.43, 3.48, 3.49, 3.53, 3.53, 3.69,]
+    Tas = [21.7, 21.7, 22.0, 22.1, 21.7, 20.0,]
     cases = ['a', 'b', 'c', 'd', 'e', 'f',]
 
     # Set the string of the fuel. Possible values with the distributed
@@ -146,6 +145,7 @@ if __name__ == "__main__":
     mix2 = [21.0, 00.00, 73.50,]
     mix3 = [07.0, 16.35, 71.15,]
     for i, case in enumerate(cases):
+        start = time.time()
         if case == 'a' or case == 'b':
             mix = mix1
         elif case == 'c' or case == 'd':
