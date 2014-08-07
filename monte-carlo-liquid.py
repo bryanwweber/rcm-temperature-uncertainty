@@ -157,7 +157,7 @@ if __name__ == "__main__":
         T0 = T0s[i]
         PC = PCs[i]
         mfuel = mfuels[i]
-        Ta = Tas[i]
+        Ta = Tas[i] + 273.15
         send = zip(range(n), rp(fuel), rp(P0), rp(T0), rp(PC), rp(mfuel), rp(Ta), rp(mix))
         # Set up a pool of processors to run in parallel
         with Pool(processes=20) as pool:
