@@ -36,8 +36,9 @@ if __name__ == "__main__":
     # Convert the gas constant from Cantera to J/mol-K
     R = ct.gas_constant/1000
 
-    # Initialize the delta_TC array
+    # Initialize the delta_TC and TC arrays
     delta_TC = np.zeros(len(cases))
+    TC = np.zeros(len(cases))
 
     gas = ct.Solution('therm-data.xml')
     fuel_mw = gas.molecular_weights[gas.species_index(fuel)]
@@ -182,5 +183,6 @@ if __name__ == "__main__":
             delta_TC_2 += (partial*delta)**2
 
         delta_TC[j] = np.sqrt(delta_TC_2)
+        TC[j] = a*np.real(lambertw(b/a*np.exp(b*T0/a)*T0*(PC/P0)**(1/a)))/b
 
-    print(delta_TC)
+    print(delta_TC, TC)
