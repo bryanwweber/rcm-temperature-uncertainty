@@ -18,11 +18,11 @@ if __name__ == "__main__":
 
     # Set the mixtures to study
     mix1 = {'o2':257, 'n2':739, 'ar':1223, 'fuel':1280,}
-    mix2 = {'o2':216, 'n2':984, 'ar':1752, 'fuel':1800,}
-    mix3 = {'ar':0, 'n2':1536, 'o2':1752, 'fuel':1800,}
-    mix4 = {'ar':0, 'n2':1365, 'o2':1557, 'fuel':1600,}
-    mix5 = {'ar':0, 'n2':1413, 'o2':1473, 'fuel':1500,}
-    mix6 = {'ar':0, 'n2':1607, 'o2':1675, 'fuel':1706,}
+    mix2 = {'ar':0, 'n2':1413, 'o2':1473, 'fuel':1500,}
+    mix3 = {'ar':0, 'n2':1607, 'o2':1675, 'fuel':1706,}
+    mix4 = {'ar':0, 'n2':1536, 'o2':1752, 'fuel':1800,}
+    mix5 = {'ar':0, 'n2':1365, 'o2':1557, 'fuel':1600,}
+    mix6 = {'o2':216, 'n2':984, 'ar':1752, 'fuel':1800,}
 
     # Set the uncertainties of the parameters
     delta_Pi = 346.6 # Pa
@@ -64,17 +64,17 @@ if __name__ == "__main__":
 
     for j, case in enumerate(cases):
         if case == 'a' or case == 'b':
-                mix = mix1
-        elif case == 'g' or case == 'h':
+            mix = mix1
+        elif case == 'c':
             mix = mix2
-        elif case == 'f':
+        elif case == 'd':
             mix = mix3
         elif case == 'e':
             mix = mix4
-        elif case == 'c':
+        elif case == 'f':
             mix = mix5
-        elif case == 'd':
-                mix = mix6
+        elif case == 'g' or case == 'h':
+            mix = mix6
 
         P0 = P0s[j]
         T0 = T0s[j]
