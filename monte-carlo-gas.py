@@ -23,7 +23,7 @@ def run_case(n, fuel, P0, T0, PC, mix):
     # of these parameters.
     # T0 = 295.1
     # Convert the initial temperature to °C to match the spec.
-    sigma_T0 = max(2.2,(T0-273)*0.0075)/2
+    sigma_T0 = max(2.2, (T0 - 273)*0.0075)/2
     T0_dist = norm_dist(loc=T0, scale=sigma_T0)
 
     # P0 = 122656.579
