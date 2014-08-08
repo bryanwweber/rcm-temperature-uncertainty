@@ -3,4 +3,4 @@
 *.aux
 histogram/*.dat
 results.txt
-
+.python-version
