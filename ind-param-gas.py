@@ -100,6 +100,7 @@ if __name__ == "__main__":
             fuel_par_pres = (mix['fuel'] - mix['o2'])*torr_to_pa
             o2_par_pres = (mix['o2'] - mix['n2'])*torr_to_pa
             n2_par_pres = mix['n2']*torr_to_pa
+            ar_par_pres = 0
 
             delta_X_fuel_2 = ((sum([ar_par_pres, n2_par_pres, o2_par_pres])/total_pressure**2)*delta_Pi)**2
             delta_X_fuel_2 += 2*((-fuel_par_pres/total_pressure**2)*delta_Pi)**2
