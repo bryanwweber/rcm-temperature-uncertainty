@@ -27,11 +27,11 @@ if __name__ == "__main__":
     nom_tank_volume = 0.01660
 
     # Set the uncertainties of the parameters
-    delta_volume = 0.00002 # m**3
-    delta_fuel_mass = 0.04 # grams
-    delta_Pi = 346.6 # Pa
-    delta_P0 = 346.6 # Pa
-    delta_PC = 5000 # Pa
+    delta_volume = 0.00001 # m**3
+    delta_fuel_mass = 0.03 # grams
+    delta_Pi = 346.6/2 # Pa
+    delta_P0 = 346.6/2 # Pa
+    delta_PC = 5000/2 # Pa
 
     # Convert the gas constant from Cantera to J/mol-K
     R = ct.gas_constant/1000
@@ -76,8 +76,8 @@ if __name__ == "__main__":
         nom_mass_fuel = mfuels[j]
         Ta = Tas[j] + 273.15
 
-        delta_Ta = max(2.2, (Ta - 273.15)*0.0075) # °C
-        delta_T0 = max(2.2, (T0 - 273)*0.0075) # °C
+        delta_Ta = max(2.2, (Ta - 273.15)*0.0075)/2 # °C
+        delta_T0 = max(2.2, (T0 - 273)*0.0075)/2 # °C
 
         # Compute the nominal moles of fuel and corresponding nominal required
         # number of moles of the gases.
@@ -176,13 +176,14 @@ if __name__ == "__main__":
         partial_a_Cp = np.array([-f[0]/(f[1] - f[0]), f[1]/(f[1] - f[0])])
         delta_a_2 = (partial_a_Cp[0]*delta_Cp[0])**2 + (partial_a_Cp[1]*delta_Cp[1])**2
         delta_a = np.sqrt(delta_a_2)
+        print(b, a)
 
         delta_TC_2 = 0
         for partial, delta in zip([partial_PC, partial_P0, partial_T0, partial_a, partial_b],
                                   [delta_PC, delta_P0, delta_T0, delta_a, delta_b]):
             delta_TC_2 += (partial*delta)**2
 
-        delta_TC[j] = np.sqrt(delta_TC_2)
+        delta_TC[j] = 2*np.sqrt(delta_TC_2)
         TC[j] = a*np.real(lambertw(b/a*np.exp(b*T0/a)*T0*(PC/P0)**(1/a)))/b
 
     print(delta_TC, TC)
