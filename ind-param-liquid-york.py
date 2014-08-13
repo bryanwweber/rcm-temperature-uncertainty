@@ -44,13 +44,12 @@ if __name__ == "__main__":
     fuel_mw = gas.molecular_weights[gas.species_index(fuel)]
     gas.basis = 'molar'
 
-    temperatures = [300, 1100,]
+    temperatures = np.arange(300,1101,1)
     gas_cp = np.zeros(len(temperatures))
     fuel_cp = np.zeros(len(temperatures))
     o2_cp = np.zeros(len(temperatures))
     n2_cp = np.zeros(len(temperatures))
     ar_cp = np.zeros(len(temperatures))
-    f = [11, 3,]
 
     for i, temperature in enumerate(temperatures):
         gas.TPX = temperature, None, '{fuel_name}:1'.format(fuel_name=fuel)
@@ -98,18 +97,6 @@ if __name__ == "__main__":
         for i, temperature in enumerate(temperatures):
             gas.TP = temperature, None
             gas_cp[i] = gas.cp/ct.gas_constant
-
-        # Compute the slope and y-intercept based on the end points
-        b = (gas_cp[1] - gas_cp[0])/(temperatures[1] - temperatures[0])
-        a = (f[1]*gas_cp[1] - f[0]*gas_cp[0])/(f[1] - f[0])
-
-        D = np.real(lambertw(b/a*np.exp((b*T0)/a)*T0*(PC/P0)**(1/a)))
-
-        partial_PC = D/(b*PC*(D+1))
-        partial_P0 = -D/(b*P0*(D+1))
-        partial_T0 = ((a + b*T0)*D)/(b*T0*(D+1))
-        partial_a = (-D*(b*T0 + np.log(PC/P0) - a*D))/(a*b*(D+1))
-        partial_b = (D*(b*T0 - a*D))/(b**2*(D+1))
 
         # Calculate the uncertainty in the number of moles of fuel.
         delta_fuel_moles = delta_fuel_mass/fuel_mw
@@ -163,20 +150,55 @@ if __name__ == "__main__":
             ar_sum += ((-nom_mole_ar/total_moles**2)**2)*delta
         delta_X_ar_2 += ar_sum
 
-        delta_Cp = np.zeros(len(temperatures))
+        delta_Cp_2 = np.zeros(len(temperatures))
         for i in range(len(temperatures)):
             for cp, delta in zip([fuel_cp[i], o2_cp[i], n2_cp[i], ar_cp[i]],
                                  [delta_X_fuel_2, delta_X_o2_2, delta_X_n2_2,
                                     delta_X_ar_2]):
-                delta_Cp[i] += delta*cp**2
+                delta_Cp_2[i] += delta*cp**2
 
-        partial_b_Cp = np.array([-1/(temperatures[1] - temperatures[0]), 1/(temperatures[1] - temperatures[0])])
-        delta_b_2 = (partial_b_Cp[0]*delta_Cp[0])**2 + (partial_b_Cp[1]*delta_Cp[1])**2
+        omega_Cp = 1/delta_Cp_2
+        T_bar = np.sum(omega_Cp*temperatures)/np.sum(omega_Cp)
+        Cp_bar = np.sum(omega_Cp*gas_cp)/np.sum(omega_Cp)
+        F = temperatures - T_bar
+        G = gas_cp - Cp_bar
+
+        # Compute the slope and y-intercept and their uncertainties by the
+        # York procedure
+        b_guess = np.zeros(2)
+        (b_guess[0], _) = np.polyfit(temperatures, gas_cp, 1)
+        beta = F + omega_Cp*b_guess[0]*G
+        err = 1
+        while err > 1E-15:
+            b_guess[1] = np.sum(omega_Cp*beta*G)/np.sum(omega_Cp*beta*F)
+            err = (b_guess[1] - b_guess[0])/b_guess[0]
+            b_guess[0] = b_guess[1]
+            beta = F + omega_Cp*b_guess[1]*G
+
+        b = b_guess[1]
+        a = Cp_bar - b*T_bar
+        t = T_bar + beta
+        t_bar = np.sum(omega_Cp*t)/np.sum(omega_Cp)
+        f = t - t_bar
+        delta_b_2 = 1/np.sum(omega_Cp*f**2)
         delta_b = np.sqrt(delta_b_2)
-        partial_a_Cp = np.array([-f[0]/(f[1] - f[0]), f[1]/(f[1] - f[0])])
-        delta_a_2 = (partial_a_Cp[0]*delta_Cp[0])**2 + (partial_a_Cp[1]*delta_Cp[1])**2
+        delta_a_2 = 1/np.sum(omega_Cp) + t_bar**2*delta*b*2
         delta_a = np.sqrt(delta_a_2)
-        print(b, a)
+
+        D = np.real(lambertw(b/a*np.exp((b*T0)/a)*T0*(PC/P0)**(1/a)))
+
+        partial_PC = D/(b*PC*(D+1))
+        partial_P0 = -D/(b*P0*(D+1))
+        partial_T0 = ((a + b*T0)*D)/(b*T0*(D+1))
+        partial_a = (-D*(b*T0 + np.log(PC/P0) - a*D))/(a*b*(D+1))
+        partial_b = (D*(b*T0 - a*D))/(b**2*(D+1))
+
+        # partial_b_Cp = np.array([-1/(temperatures[1] - temperatures[0]), 1/(temperatures[1] - temperatures[0])])
+        # delta_b_2 = (partial_b_Cp[0]*delta_Cp[0])**2 + (partial_b_Cp[1]*delta_Cp[1])**2
+        # delta_b = np.sqrt(delta_b_2)
+        # partial_a_Cp = np.array([-f[0]/(f[1] - f[0]), f[1]/(f[1] - f[0])])
+        # delta_a_2 = (partial_a_Cp[0]*delta_Cp[0])**2 + (partial_a_Cp[1]*delta_Cp[1])**2
+        # delta_a = np.sqrt(delta_a_2)
 
         delta_TC_2 = 0
         for partial, delta in zip([partial_PC, partial_P0, partial_T0, partial_a, partial_b],
