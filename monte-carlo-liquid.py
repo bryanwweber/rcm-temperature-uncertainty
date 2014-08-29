@@ -2,6 +2,8 @@
 from __future__ import division, print_function
 from scipy.special import lambertw
 from scipy.stats import norm as norm_dist
+from scipy.stats import triang
+from scipy.stats import uniform
 import cantera as ct
 import numpy as np
 from multiprocessing import Pool
@@ -23,6 +25,8 @@ def run_case(n, fuel, P0, T0, PC, mfuel, Ta, mix):
     # Convert the ambient temperature to °C to match the spec.
     sigma_Ta = max(2.2, (Ta - 273.15)*0.0075)/2
     Ta_dist = norm_dist(loc=Ta, scale=sigma_Ta)
+    Ta_dist = uniform(loc=Ta-sigma_Ta, scale=sigma_Ta*2)
+    Ta_dist = triang(loc=Ta-sigma_Ta, scale=sigma_Ta*2, c=0.5)
     nom_tank_volume = 0.01660
     sigma_volume = 0.00001
     vol_dist = norm_dist(loc=nom_tank_volume, scale=sigma_volume)
@@ -34,6 +38,8 @@ def run_case(n, fuel, P0, T0, PC, mfuel, Ta, mix):
     # Convert the initial temperature to °C to match the spec.
     sigma_T0 = max(2.2, (T0 - 273)*0.0075)/2
     T0_dist = norm_dist(loc=T0, scale=sigma_T0)
+    T0_dist = uniform(loc=T0-sigma_T0, scale=sigma_T0*2)
+    T0_dist = triang(loc=T0-sigma_T0, scale=sigma_T0*2, c=0.5)
 
     # P0 = 122656.579
     sigma_P0 = 346.6/2
