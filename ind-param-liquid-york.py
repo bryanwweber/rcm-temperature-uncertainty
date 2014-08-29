@@ -12,7 +12,6 @@ if __name__ == "__main__":
     mfuels = [3.43, 3.48, 3.49, 3.53, 3.53, 3.69,]
     Tas = [21.7, 21.7, 22.0, 22.1, 21.7, 20.0,]
     cases = ['a', 'b', 'c', 'd', 'e', 'f',]
-    blergh = []
 
     # Set the string of the fuel. Possible values with the distributed
     # therm-data.xml are 'mch', 'nc4h9oh', 'sc4h9oh', 'tc4h9oh', 'ic4h9oh',
@@ -192,13 +191,6 @@ if __name__ == "__main__":
         partial_T0 = ((a + b*T0)*D)/(b*T0*(D+1))
         partial_a = (-D*(b*T0 + np.log(PC/P0) - a*D))/(a*b*(D+1))
         partial_b = (D*(b*T0 - a*D))/(b**2*(D+1))
-
-        # partial_b_Cp = np.array([-1/(temperatures[1] - temperatures[0]), 1/(temperatures[1] - temperatures[0])])
-        # delta_b_2 = (partial_b_Cp[0]*delta_Cp[0])**2 + (partial_b_Cp[1]*delta_Cp[1])**2
-        # delta_b = np.sqrt(delta_b_2)
-        # partial_a_Cp = np.array([-f[0]/(f[1] - f[0]), f[1]/(f[1] - f[0])])
-        # delta_a_2 = (partial_a_Cp[0]*delta_Cp[0])**2 + (partial_a_Cp[1]*delta_Cp[1])**2
-        # delta_a = np.sqrt(delta_a_2)
 
         delta_TC_2 = 0
         for partial, delta in zip([partial_PC, partial_P0, partial_T0, partial_a, partial_b],
