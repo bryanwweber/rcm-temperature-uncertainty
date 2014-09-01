@@ -1,79 +1,111 @@
 #! /usr/bin/env python3
-from __future__ import division, print_function
-from scipy.special import lambertw
-from scipy.stats import norm as norm_dist
-from scipy.stats import triang
-from scipy.stats import uniform
-import cantera as ct
-import numpy as np
+"""
+monte-carlo-liquid.py
+
+This script runs the Monte Carlo uncertainty analysis for
+a liquid fuel in the University of Connecticut RCM. This script is
+associated with the work "On the Uncertainty of Temperature Estimation
+in a Rapid Compression Machine" by Bryan W. Weber, Chih-Jen Sung, and
+Michael Renfro, submitted to Combustion and Flame. This script is
+licensed according to the LICENSE file available in the repository
+associated in the paper.
+
+Please email bryan@engr.uconn.edu with any questions.
+"""
+
+# System library imports
+import sys
 from multiprocessing import Pool
-import time
-import subprocess
-import os
 from itertools import repeat as rp
 
-def run_case(n, fuel, P0, T0, PC, mfuel, Ta, mix):
+if sys.version_info[:2] < (3, 3):
+    print('This script requires Python 3.3 or higher.')
+    sys.exit(1)
+
+try:
+    from scipy.special import lambertw
+    from scipy.stats import norm as norm_dist
+    from scipy.stats import triang
+    from scipy.stats import uniform
+except ImportError:
+    print('SciPy must be installed')
+    sys.exit(1)
+
+try:
+    import cantera as ct
+except ImportError:
+    print('Cantera must be installed')
+    sys.exit(1)
+
+try:
+    import numpy as np
+except ImportError:
+    print('NumPy must be installed')
+    sys.exit(1)
+
+def run_case(dummy, fuel, P_0, T_0, P_C, mfuel, T_a, mix):
     # Set the Cantera Solution with the thermo data from the xml file.
-    # Get the molecular weight of the fuel and set the unit basis for the
-    # Solution to molar basis.
+    # Get the molecular weight of the fuel and set the unit basis for
+    # the Solution to molar basis.
     gas = ct.Solution('therm-data.xml')
     fuel_mw = gas.molecular_weights[gas.species_index(fuel)]
     gas.basis = 'molar'
 
-    # Set the ambient temperature and tank volume
-    # Ta = 21.7+273.15
-    # Convert the ambient temperature to °C to match the spec.
-    sigma_Ta = max(2.2, (Ta - 273.15)*0.0075)/2
-    Ta_dist = norm_dist(loc=Ta, scale=sigma_Ta)
-    Ta_dist = uniform(loc=Ta-sigma_Ta, scale=sigma_Ta*2)
-    Ta_dist = triang(loc=Ta-sigma_Ta, scale=sigma_Ta*2, c=0.5)
+    # Set the ambient temperature and distribution. Convert the ambient
+    # temperature to °C to match the spec but use absolute temperature
+    # for the distribution.
+    sigma_Ta = max(2.2, (T_a - 273.15)*0.0075)/2
+    Ta_dist = norm_dist(loc=T_a, scale=sigma_Ta)
+    # Ta_dist = uniform(loc=T_a-sigma_Ta, scale=sigma_Ta*2)
+    # Ta_dist = triang(loc=T_a-sigma_Ta, scale=sigma_Ta*2, c=0.5)
+
+    # Set the tank volume and distribution.
     nom_tank_volume = 0.01660
     sigma_volume = 0.00001
     vol_dist = norm_dist(loc=nom_tank_volume, scale=sigma_volume)
 
-    # Set the initial temperature (in K), initial pressure (in Pa), and
-    # compressed pressure (in Pa). Create the normal distributions for each
-    # of these parameters.
-    # T0 = 295.1
-    # Convert the initial temperature to °C to match the spec.
-    sigma_T0 = max(2.2, (T0 - 273)*0.0075)/2
-    T0_dist = norm_dist(loc=T0, scale=sigma_T0)
-    T0_dist = uniform(loc=T0-sigma_T0, scale=sigma_T0*2)
-    T0_dist = triang(loc=T0-sigma_T0, scale=sigma_T0*2, c=0.5)
+    # Create the normal distributions for the initial temperature,
+    # initial pressure, and compressed pressure. Convert the initial
+    # temperature to °C to match the spec. Use the appropriate
+    # distribution for the desired analysis (normal, uniform,
+    # triangular).
+    sigma_T0 = max(2.2, (T_0 - 273)*0.0075)/2
+    T0_dist = norm_dist(loc=T_0, scale=sigma_T0)
+    # T0_dist = uniform(loc=T_0-sigma_T0, scale=sigma_T0*2)
+    # T0_dist = triang(loc=T_0-sigma_T0, scale=sigma_T0*2, c=0.5)
 
-    # P0 = 122656.579
     sigma_P0 = 346.6/2
-    P0_dist = norm_dist(loc=P0, scale=sigma_P0)
+    P0_dist = norm_dist(loc=P_0, scale=sigma_P0)
 
-    # PC = 15.1E5
     sigma_PC = 5000/2
-    PC_dist = norm_dist(loc=PC, scale=sigma_PC)
+    PC_dist = norm_dist(loc=P_C, scale=sigma_PC)
 
-    # Set the nominal injected mass of the fuel. Compute the nominal moles of
-    # fuel and corresponding nominal required number of moles of the gases.
+    # Set the nominal injected mass of the fuel. Compute the nominal
+    # moles of fuel and corresponding nominal required number of moles
+    # of the gases.
     nom_mass_fuel = mfuel
     nom_mole_fuel = nom_mass_fuel/fuel_mw
     nom_mole_o2 = nom_mole_fuel*mix[0]
     nom_mole_n2 = nom_mole_fuel*mix[1]
     nom_mole_ar = nom_mole_fuel*mix[2]
 
-    # Create the normal distribution for the fuel mass
-    sigma_mass = 0.04/2
+    # Create the normal distribution for the fuel mass.
+    sigma_mass = 0.03/2
     fuel_mass_dist = norm_dist(loc=nom_mass_fuel, scale=sigma_mass)
 
-    # Calculate the nominal pressure required for each gas to match the desired
-    # molar proportions. Note that the gas constant from Cantera is given in
-    # units of J/kmol-K, hence the factor of 1000.
-    nom_o2_pres = nom_mole_o2*ct.gas_constant*Ta/(1000*nom_tank_volume)
-    nom_n2_pres = nom_mole_n2*ct.gas_constant*Ta/(1000*nom_tank_volume)
-    nom_ar_pres = nom_mole_ar*ct.gas_constant*Ta/(1000*nom_tank_volume)
+    # Calculate the nominal pressure required for each gas to match the
+    # desired molar proportions. Note that the gas constant from
+    # Cantera is given in units of J/kmol-K, hence the factor of 1000.
+    nom_o2_pres = nom_mole_o2*ct.gas_constant*T_a/(1000*nom_tank_volume)
+    nom_n2_pres = nom_mole_n2*ct.gas_constant*T_a/(1000*nom_tank_volume)
+    nom_ar_pres = nom_mole_ar*ct.gas_constant*T_a/(1000*nom_tank_volume)
 
-    # Compute the pressures of each component as they are filled into the
-    # mixing tank. The mean of the distribution of the pressure of each
-    # subsequent gas is the sum of the sampled value of the pressure of the
-    # previous gas plus the nominal value of the current gas. Note that these
-    # are thus not partial pressures, but the total pressure in the tank after
-    # filling each component.
+    # Compute the pressures of each component as they are filled into
+    # the mixing tank. The mean of the distribution of the pressure of
+    # each subsequent gas is the sum of the sampled value of the
+    # pressure of the previous gas plus the nominal value of the
+    # current gas. Note that these are thus not partial pressures, but
+    # the total pressure in the tank after filling each component.
     sigma_pressure = 346.6/2
     o2_dist = norm_dist(loc=nom_o2_pres, scale=sigma_pressure)
     o2_pres_rand = o2_dist.ppf(np.random.random_sample())
@@ -84,21 +116,22 @@ def run_case(n, fuel, P0, T0, PC, mfuel, Ta, mix):
     ar_dist = norm_dist(loc=ar_pressure, scale=sigma_pressure)
     ar_pres_rand = ar_dist.ppf(np.random.random_sample())
 
-    # Sample random values of the ambient temperature, tank volume, and fuel
-    # mass from their distributions.
+    # Sample random values of the ambient temperature, tank volume, and
+    # fuel mass from their distributions.
     Ta_rand = Ta_dist.ppf(np.random.random_sample())
     tank_volume_rand = vol_dist.ppf(np.random.random_sample())
     mole_fuel_rand = fuel_mass_dist.ppf(np.random.random_sample())/fuel_mw
 
-    # Compute the number of moles of each gaseous component based on the
-    # sampling from the various distributions. Note that the gas constant from
-    # Cantera is given in units of J/kmol-K, hence the factor of 1000.
+    # Compute the number of moles of each gaseous component based on
+    # the sampling from the various distributions. Note that the gas
+    # constant from Cantera is given in units of J/kmol-K, hence the
+    # factor of 1000.
     mole_o2_rand = o2_pres_rand*tank_volume_rand*1000/(ct.gas_constant*Ta_rand)
     mole_n2_rand = (n2_pres_rand - o2_pres_rand)*tank_volume_rand*1000/(ct.gas_constant*Ta_rand)
     mole_ar_rand = (ar_pres_rand - n2_pres_rand)*tank_volume_rand*1000/(ct.gas_constant*Ta_rand)
 
-    # Compute the mole fractions of each component and set the state of the
-    # Cantera solution.
+    # Compute the mole fractions of each component and set the state of
+    # the Cantera solution.
     total_moles = sum([mole_fuel_rand, mole_o2_rand, mole_n2_rand, mole_ar_rand])
     mole_fractions = '{fuel_name}:{fuel_mole},o2:{o2},n2:{n2},ar:{ar}'.format(
         fuel_name=fuel, fuel_mole=mole_fuel_rand/total_moles, o2=mole_o2_rand/total_moles,
@@ -109,11 +142,11 @@ def run_case(n, fuel, P0, T0, PC, mfuel, Ta, mix):
     # The range is [first input, second input) with increment set by the third
     # input. Loop through the temperatures and compute the non-dimensional
     # specific heats.
-    temperatures = np.arange(300,1105,5)
+    temperatures = np.arange(300, 1105, 5)
     gas_cp = np.zeros(len(temperatures))
-    for i, temp in enumerate(temperatures):
+    for j, temp in enumerate(temperatures):
         gas.TP = temp, None
-        gas_cp[i] = gas.cp/ct.gas_constant
+        gas_cp[j] = gas.cp/ct.gas_constant
 
     # Compute the linear fit to the specific heat.
     (gas_b, gas_a) = np.polyfit(temperatures, gas_cp, 1)
@@ -130,8 +163,8 @@ def run_case(n, fuel, P0, T0, PC, mfuel, Ta, mix):
     return TC_rand
 
 if __name__ == "__main__":
-    # n is the number iterations to run per case
-    n = 1000000
+    # n_runs is the number iterations to run per case
+    n_runs = 1000000
 
     # Set the parameters to be studied so that we can use a loop
     P0s = [1.8794E5, 4.3787E5, 3.9691E5, 4.3635E5, 1.9118E5, 4.3987E5,]
@@ -141,46 +174,50 @@ if __name__ == "__main__":
     Tas = [21.7, 21.7, 22.0, 22.1, 21.7, 20.0,]
     cases = ['a', 'b', 'c', 'd', 'e', 'f',]
 
-    # Set the string of the fuel. Possible values with the distributed
-    # therm-data.xml are 'mch', 'nc4h9oh', 'sc4h9oh', 'tc4h9oh', 'ic4h9oh',
-    # 'ic5h11oh', and 'c3h6'
-    fuel = 'mch'
+    # Set the string of the fuel.
+    pass_fuel = 'mch'
 
     # Set the mixtures to study
     mix1 = [10.5, 12.25, 71.75,]
     mix2 = [21.0, 00.00, 73.50,]
     mix3 = [07.0, 16.35, 71.15,]
     for i, case in enumerate(cases):
-        start = time.time()
+        # Each case is associated with a particular mixture in the
+        # paper. Set which mixture to use here.
         if case == 'a' or case == 'b':
-            mix = mix1
+            pass_mix = mix1
         elif case == 'c' or case == 'd':
-            mix = mix2
+            pass_mix = mix2
         else:
-            mix = mix3
+            pass_mix = mix3
 
-        P0 = P0s[i]
-        T0 = T0s[i]
-        PC = PCs[i]
-        mfuel = mfuels[i]
-        Ta = Tas[i] + 273.15
-        send = zip(range(n), rp(fuel), rp(P0), rp(T0), rp(PC), rp(mfuel), rp(Ta), rp(mix))
-        # Set up a pool of processors to run in parallel
+        # Set all the other initial variables and create a zip to send
+        # to the run_case function.
+        pass_P_0 = P0s[i]
+        pass_T_0 = T0s[i]
+        pass_P_C = PCs[i]
+        pass_mfuel = mfuels[i]
+        pass_T_a = Tas[i] + 273.15
+        send = zip(range(n_runs), rp(pass_fuel), rp(pass_P_0), rp(pass_T_0), 
+                   rp(pass_P_C), rp(pass_mfuel), rp(pass_T_a), rp(pass_mix)
+                  )
+
+        # Set up a pool of processors to run in parallel.
         with Pool(processes=20) as pool:
 
         # Run the analysis and get the result into a NumPy array.
             result = np.array(pool.starmap(run_case, send))
 
         # Print the mean and twice the standard deviation to a file.
-        with open('results.txt', 'a') as output:
+        with open('results-liquid.txt', 'a') as output:
             print(case, result.mean(), result.std()*2, file=output)
-        print(time.time() - start)
 
-        # Create and save the histogram data file. Compile the TeX file to make a
-        # PDF figure of the histogram.
+        # Create and save the histogram data file. The format is:
+        # Mean temperature, standard deviation
+        # Bin edges, height
+        # Note the bin edges are one element longer than the histogram
+        # so we append a zero at the end of the histogram.
         hist, bin_edges = np.histogram(result, bins=100, density=True)
-        np.savetxt('histogram/histogram-'+case+'.dat', np.vstack((np.insert(bin_edges, 0, result.mean()), np.insert(np.append(hist,0), 0, result.std()))).T)
-    # os.chdir('histogram')
-    # subprocess.call(['pdflatex', '-interaction=batchmode', 'histogram'])
-    # print(result)
-    # n, bins, patches = plt.hist(result, 100, normed=1, facecolor='green', alpha=0.75)
+        np.savetxt('histogram/histogram-liquid-'+case+'.dat', 
+                   np.vstack((np.insert(bin_edges, 0, result.mean()), np.insert(np.append(hist, 0), 0, result.std()))).T
+                  )
