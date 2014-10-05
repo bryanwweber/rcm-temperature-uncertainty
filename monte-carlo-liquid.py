@@ -181,6 +181,7 @@ if __name__ == "__main__":
     mix1 = [10.5, 12.25, 71.75,]
     mix2 = [21.0, 00.00, 73.50,]
     mix3 = [07.0, 16.35, 71.15,]
+
     for i, case in enumerate(cases):
         # Each case is associated with a particular mixture in the
         # paper. Set which mixture to use here.
@@ -198,19 +199,19 @@ if __name__ == "__main__":
         pass_P_C = PCs[i]
         pass_mfuel = mfuels[i]
         pass_T_a = Tas[i] + 273.15
-        send = zip(range(n_runs), rp(pass_fuel), rp(pass_P_0), rp(pass_T_0), 
+        send = zip(range(n_runs), rp(pass_fuel), rp(pass_P_0), rp(pass_T_0),
                    rp(pass_P_C), rp(pass_mfuel), rp(pass_T_a), rp(pass_mix)
                   )
 
         # Set up a pool of processors to run in parallel.
-        with Pool(processes=20) as pool:
+        with Pool(processes=10) as pool:
 
         # Run the analysis and get the result into a NumPy array.
             result = np.array(pool.starmap(run_case, send))
 
         # Print the mean and twice the standard deviation to a file.
         with open('results-liquid.txt', 'a') as output:
-            print(case, result.mean(), result.std()*2, file=output)
+            print(case+'tri', result.mean(), result.std()*2, file=output)
 
         # Create and save the histogram data file. The format is:
         # Mean temperature, standard deviation
@@ -218,6 +219,6 @@ if __name__ == "__main__":
         # Note the bin edges are one element longer than the histogram
         # so we append a zero at the end of the histogram.
         hist, bin_edges = np.histogram(result, bins=100, density=True)
-        np.savetxt('histogram/histogram-liquid-'+case+'.dat', 
+        np.savetxt('histogram/histogram-liquid-uni'+case+'.dat',
                    np.vstack((np.insert(bin_edges, 0, result.mean()), np.insert(np.append(hist, 0), 0, result.std()))).T
                   )

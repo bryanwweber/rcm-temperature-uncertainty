@@ -161,6 +161,7 @@ if __name__ == "__main__":
     mix4 = {'ar':0, 'n2':1536, 'o2':1752, 'fuel':1800,}
     mix5 = {'ar':0, 'n2':1365, 'o2':1557, 'fuel':1600,}
     mix6 = {'o2':216, 'n2':984, 'ar':1752, 'fuel':1800,}
+
     for i, case in enumerate(cases):
         # Each case is associated with a particular mixture in the
         # paper. Set which mixture to use here.
