@@ -11,6 +11,9 @@ Michael W. Renfro, Combustion and Flame, DOI:
 licensed according to the LICENSE file available in the repository
 associated in the paper.
 
+The most recent version of this code is available on GitHub
+at https://github.com/bryanwweber/rcm-temperature-uncertainty
+
 Please email weber@engineer.uconn.edu with any questions.
 """
 
