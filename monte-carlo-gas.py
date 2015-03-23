@@ -1,16 +1,17 @@
 #! /usr/bin/env python3
 """
-monte-carlo-liquid.py
+monte-carlo-gas.py
 
 This script runs the Monte Carlo uncertainty analysis for
-a liquid fuel in the University of Connecticut RCM. This script is
+a gaseous fuel in the University of Connecticut RCM. This script is
 associated with the work "On the Uncertainty of Temperature Estimation
 in a Rapid Compression Machine" by Bryan W. Weber, Chih-Jen Sung, and
-Michael Renfro, submitted to Combustion and Flame. This script is
+Michael W. Renfro, Combustion and Flame, DOI:
+10.1016/j.combustflame.2015.03.001. This script is
 licensed according to the LICENSE file available in the repository
 associated in the paper.
 
-Please email bryan@engr.uconn.edu with any questions.
+Please email weber@engineer.uconn.edu with any questions.
 """
 
 # System library imports
